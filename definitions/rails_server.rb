@@ -1,4 +1,4 @@
-define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres' do
+define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres', db_user_password: nil, server_names: nil, pre_start: nil do
 
   package "nodejs" # for Rails asset pipeline
 
