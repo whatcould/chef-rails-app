@@ -20,6 +20,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
 
   template "/etc/nginx/sites-available/rails-#{app_name}.conf" do
     source "nginx-rails.conf.erb"
+    cookbook 'rails_app'
     variables(server_names: params[:server_names],
               app_name: app_name,
               rails_env: env_name,
@@ -165,6 +166,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
               port: port
               )
     source "database.yml.erb"
+    cookbook 'rails_app'
     owner user_name
     mode "0644"
   end
