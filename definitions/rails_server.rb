@@ -1,3 +1,5 @@
+require 'digest'
+
 define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres', db_user_password: nil, server_names: nil, pre_start: nil do
 
   package "nodejs" # for Rails asset pipeline
@@ -72,10 +74,12 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
     end
 
     app_password = params[:db_user_password]
+    hashed_password = Digest::MD5.hexdigest(app_password)
+
     bash "assign-application-user-password" do
       user 'postgres'
       code <<-EOH
-    echo "ALTER ROLE #{app_name} ENCRYPTED PASSWORD '#{app_password}';" | psql
+    echo "ALTER ROLE #{app_name} ENCRYPTED PASSWORD 'md5#{hashed_password}';" | psql
       EOH
       not_if "echo '\connect' | PGPASSWORD=#{app_password} psql --username=#{app_name}_user --no-password -h localhost"
       action :run
