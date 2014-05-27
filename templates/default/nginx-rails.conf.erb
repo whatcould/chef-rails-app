@@ -1,0 +1,38 @@
+server {
+  listen 80;
+
+  server_name <%= @server_names %>;
+
+  passenger_enabled on;
+
+  root        /srv/<%= @app_name %>/current/public/;
+  access_log  /srv/<%= @app_name %>/shared/log/nginx/access.log;
+  error_log  /srv/<%= @app_name %>/shared/log/nginx/error.log notice;
+
+  rack_env <%= @rails_env %>;
+
+  location ~ ^/assets/ {
+    expires 1y;
+    add_header Cache-Control public;
+
+    add_header ETag "";
+    break;
+  }
+
+  # Enable this for maintenance mode
+
+  # location / {
+  #     if (-f $document_root/maintenance.html) {
+  #         return 503;
+  #    }
+  #  }
+  # error_page 503 @maintenance;
+  # location @maintenance {
+  #         rewrite ^(.*)$ /maintenance.html break;
+  # }
+  #
+
+}
+<% if @pre_start %>
+  passenger_pre_start @pre_start;
+<% end %>

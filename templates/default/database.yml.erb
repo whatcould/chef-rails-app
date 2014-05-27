@@ -1,0 +1,8 @@
+<%= @environment %>:
+  adapter: <%= @adapter || 'postgresql' %>
+  database: <%= @database %>
+  username: <%= @user %>
+  password: <%= @password %>
+  encoding: <%= @encoding || 'unicode' %>
+  host: <%= @host || "127.0.0.1" %>
+  port: <%= @port || 5432 %>
