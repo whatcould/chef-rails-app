@@ -1,6 +1,6 @@
 require 'digest'
 
-define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres', db_user_password: nil, server_names: nil, pre_start: nil do
+define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres', db_user_password: nil, server_names: nil, pre_start: nil, vhost_template: nil do
 
   package "nodejs" # for Rails asset pipeline
 
@@ -20,7 +20,8 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
     recursive true
   end
 
-  template "/etc/nginx/sites-available/rails-#{app_name}.conf" do
+  nginx_vhost_template = params[:vhost_template] || "/etc/nginx/sites-available/rails-#{app_name}.conf"
+  template nginx_vhost_template do
     source "nginx-rails.conf.erb"
     cookbook 'rails_app'
     variables(server_names: params[:server_names],
