@@ -1,0 +1,24 @@
+{
+    "attributes": {},
+    "conflicting": {},
+    "dependencies": {
+        "logrotate": ">= 0.0.0",
+        "nginx": ">= 0.0.0",
+        "mysql2_chef_gem": ">= 0.0.0",
+        "database": ">= 0.0.0"
+    },
+    "description": "Sets up Rails app, db",
+    "groupings": {},
+    "license": "Apache 2.0",
+    "long_description": "",
+    "maintainer": "Whatcould",
+    "maintainer_email": "work@whatcould.com",
+    "name": "rails_app",
+    "platforms": {},
+    "providing": {},
+    "recipes": {},
+    "recommendations": {},
+    "replacing": {},
+    "suggestions": {},
+    "version": "0.0.1"
+}
