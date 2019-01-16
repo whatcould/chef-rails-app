@@ -1,12 +1,15 @@
 require 'digest'
 
-define :rails_server, env_name: 'production', user_name: 'deploy', database: 'postgres', db_user_password: nil, server_names: nil, pre_start: nil, vhost_template: nil do
+define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil,
+      database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
+      certbot_dir: nil, pre_start: nil, vhost_template: nil, vhost_name: nil, passenger_ruby: nil do
 
   package "nodejs" # for Rails asset pipeline
 
   app_name = params[:app_name] || params[:name]
   user_name = params[:user_name]
   env_name = params[:env_name]
+  ruby_version = params[:ruby_version] || node['ruby']['ruby-build-version']
 
   # 'recursive' does not set owner;
   # see http://tickets.opscode.com/browse/CHEF-1621
@@ -20,14 +23,17 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
     recursive true
   end
 
-  nginx_vhost_template = params[:vhost_template] || "/etc/nginx/sites-available/rails-#{app_name}.conf"
-  template nginx_vhost_template do
-    source "nginx-rails.conf.erb"
+  nginx_vhost_name = params[:vhost_name] || "rails-#{app_name}"
+  nginx_vhost_template = params[:vhost_template] || "nginx-rails.conf.erb"
+  template "/etc/nginx/sites-available/#{nginx_vhost_name}.conf"  do
+    source nginx_vhost_template
     cookbook 'rails_app'
     variables(server_names: params[:server_names],
               app_name: app_name,
               rails_env: env_name,
-              pre_start: params[:pre_start]
+              pre_start: params[:pre_start],
+              certbot_dir: params[:certbot_dir],
+              passenger_ruby: params[:passenger_ruby]
               )
 
     mode 0755
@@ -41,12 +47,11 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
 
   logrotate_app "#{app_name}-nginx" do
     cookbook "logrotate"
-    path [ "/srv/#{app_name}/shared/log/nginx/access.log /srv/#{app_name}/shared/log/nginx/error.log" ]
+    path [ "/srv/#{app_name}/shared/log/nginx/access.log", "/srv/#{app_name}/shared/log/nginx/error.log" ]
     frequency "daily"
-    create "644 root root"
+    create "660 deploy www-data"
     rotate 7
-    compress
-    delaycompress
+    options   ['missingok', 'delaycompress', 'notifempty']
     sharedscripts
     postrotate "[ ! -f /var/run/nginx.pid ] || kill -USR1 `cat /var/run/nginx.pid`"
   end
@@ -55,14 +60,14 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
     cookbook "logrotate"
     path [ "/srv/#{app_name}/shared/log/*.log" ]
     frequency "daily"
-    create "644 root root"
+    create "660 deploy www-data"
     rotate 7
-    compress
-    delaycompress
-    sharedscripts
+    options   ['missingok', 'delaycompress', 'notifempty']
     postrotate "touch /srv/#{app_name}/current/tmp/restart.txt"
   end
 
+
+  app_password = params[:db_user_password]
 
   if params[:database] == 'postgres'
     bash "create-application-user" do
@@ -74,7 +79,6 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
       action :run
     end
 
-    app_password = params[:db_user_password]
     hashed_password = Digest::MD5.hexdigest("#{app_password}#{app_name}_user")
 
     bash "assign-application-user-password" do
@@ -111,7 +115,13 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
       end
     end
   else
-    connection_info = {host: "localhost", username: 'root', password: params[:mysql_root_password]}
+
+    mysql2_chef_gem 'default' do
+      action :install
+    end
+
+    # if socket is not specified, tries to connect to default socket
+    connection_info = {host: "localhost", username: 'root', password: params[:mysql_root_password], socket: "/var/run/mysql-#{params[:mysql_instance_name]}/mysqld.sock"}
     database_name = "#{app_name}_#{env_name}"
     db_user_name = "#{app_name}_user"
     mysql_database database_name do
@@ -121,31 +131,43 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
 
     mysql_database_user db_user_name do
       connection connection_info
-      password params[:db_user_password]
+      password app_password
       action :create
     end
 
     mysql_database_user db_user_name do
       connection connection_info
       database_name database_name
+      password app_password
       privileges [:all]
       action :grant
+    end
+
+    # # https://github.com/flatrocks/cookbook-mysql_logrotate
+    # mysql_logrotate_agent params[:mysql_instance_name] do
+    #   mysql_password params[:mysql_logrotate_password]
+    #   connection connection_info
+    #   action :create
+    # end
+
+    logrotate_app 'mysql-server' do
+      enable false
     end
 
   end
 
   gem_package "bundler" do
     action :install
-    gem_binary "/usr/local/ruby/#{node['ruby']['ruby-build-version']}/bin/gem"
+    gem_binary "/usr/local/ruby/#{ruby_version}/bin/gem"
   end
 
   # cap uses rake; until I can figure out how to make it do a bundle exec rake, or use binstubs, installing the correct rake version globally:
-  gem_package "rake" do
-    action :upgrade
-    gem_binary "/usr/local/ruby/#{node['ruby']['ruby-build-version']}/bin/gem"
-    version '10.1.0'
-    options '--force'
-  end
+  # gem_package "rake" do
+  #   action :upgrade
+  #   gem_binary "/usr/local/ruby/#{node['ruby']['ruby-build-version']}/bin/gem"
+  #   version '10.1.0'
+  #   options '--force'
+  # end
 
   directory "/srv/#{app_name}/shared/config"               do owner user_name end
   directory "/srv/#{app_name}/shared/config/initializers"  do owner user_name end
@@ -165,7 +187,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', database: 'po
     variables(environment: env_name,
               database: "#{app_name}_#{env_name}",
               user: "#{app_name}_user",
-              password: data_bag_item('database', 'database_users')["#{app_name}_user"],
+              password: app_password,
               adapter: adapter,
               encoding: encoding,
               port: port
