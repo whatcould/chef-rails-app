@@ -1,6 +1,6 @@
 require 'digest'
 
-define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil,
+define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil, enable_nginx: true,
       database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
       certbot_dir: nil, pre_start: nil, vhost_template: 'nginx-rails.conf.erb', vhost_name: nil, template_cookbook: 'rails_app', passenger_ruby: nil do
 
@@ -43,8 +43,10 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     notifies :restart, "service[nginx]"
   end
 
-  nginx_site "rails-#{app_name}.conf" do
-    action :enable
+  if params[:enable_nginx]
+    nginx_site "rails-#{app_name}.conf" do
+      action :enable
+    end
   end
 
   logrotate_app "#{app_name}-nginx" do
