@@ -120,7 +120,6 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       end
     end
   else
-
     mysql2_chef_gem 'default' do
       action :install
     end
@@ -161,9 +160,10 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
   end
 
-  gem_package "bundler" do
-    action :install
-    gem_binary "/usr/local/ruby/#{ruby_version}/bin/gem"
+  # Assumes ruby_rbenv cookbook
+  rbenv_gem 'bundler' do
+    rbenv_version ruby_version
+    user 'deploy'
   end
 
   # cap uses rake; until I can figure out how to make it do a bundle exec rake, or use binstubs, installing the correct rake version globally:
