@@ -111,6 +111,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       action :run
     end
 
+    package 'libpq-dev' # for DBD:Pg cpan
     cpan_module "DBD::Pg"
     # Monitor database with munin
     %w(size scans cache transactions).each do |kind|
