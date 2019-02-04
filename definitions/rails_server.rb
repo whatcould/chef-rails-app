@@ -70,7 +70,6 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     postrotate "touch /srv/#{app_name}/current/tmp/restart.txt"
   end
 
-
   app_password = params[:db_user_password]
 
   if params[:database] == 'postgres'
@@ -97,9 +96,9 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     bash "create-application-db" do
       user 'postgres'
       code <<-EOH
-    echo "CREATE DATABASE #{app_name}_#{env_name};" | psql
+    echo "CREATE DATABASE #{app_name};" | psql
       EOH
-      not_if "psql -tAc \"SELECT 1 from pg_database where datname='#{app_name}_#{env_name}';\""
+      not_if "psql -tAc \"SELECT 1 from pg_database where datname='#{app_name}';\""
       action :run
     end
 
@@ -126,7 +125,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
     # if socket is not specified, tries to connect to default socket
     connection_info = {host: "localhost", username: 'root', password: params[:mysql_root_password], socket: "/var/run/mysql-#{params[:mysql_instance_name]}/mysqld.sock"}
-    database_name = "#{app_name}_#{env_name}"
+    database_name = "#{app_name}"
     db_user_name = "#{app_name}_user"
     mysql_database database_name do
       connection connection_info
@@ -190,7 +189,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
   template "/srv/#{app_name}/shared/config/database.yml" do
     variables(environment: env_name,
-              database: "#{app_name}_#{env_name}",
+              database: "#{app_name}",
               user: "#{app_name}_user",
               password: app_password,
               adapter: adapter,
