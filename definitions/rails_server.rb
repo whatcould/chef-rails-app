@@ -163,6 +163,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   rbenv_gem 'bundler' do
     rbenv_version ruby_version
     user 'deploy'
+    version '1.17.3' # avoid issues with bundler 2
   end
 
   # cap uses rake; until I can figure out how to make it do a bundle exec rake, or use binstubs, installing the correct rake version globally:
