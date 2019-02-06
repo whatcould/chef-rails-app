@@ -73,30 +73,36 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   app_password = params[:db_user_password]
 
   if params[:database] == 'postgres'
-    bash "create-application-user" do
-      user 'postgres'
-      code <<-EOH
-    echo "CREATE USER #{app_name}_user;" | psql
-      EOH
-      not_if "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='#{app_name}_user'\""
-      action :run
+
+    postgresql_user "#{app_name}_user" do
+      password app_password
     end
 
-    hashed_password = Digest::MD5.hexdigest("#{app_password}#{app_name}_user")
-
-    bash "assign-application-user-password" do
-      user 'postgres'
-      code <<-EOH
-    echo "ALTER ROLE #{app_name}_user ENCRYPTED PASSWORD 'md5#{hashed_password}';" | psql
-      EOH
-      not_if "echo '\connect' | PGPASSWORD=#{app_password} psql --username=#{app_name}_user --no-password -h localhost"
-      action :run
-    end
+        #
+    # bash "create-application-user" do
+    #   user 'postgres'
+    #   code <<-EOH
+    # echo "CREATE USER \"#{app_name}_user\";" | psql
+    #   EOH
+    #   not_if "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='#{app_name}_user'\""
+    #   action :run
+    # end
+    #
+    # hashed_password = Digest::MD5.hexdigest("#{app_password}#{app_name}_user")
+    #
+    # bash "assign-application-user-password" do
+    #   user 'postgres'
+    #   code <<-EOH
+    # echo "ALTER ROLE `#{app_name}_user` ENCRYPTED PASSWORD 'md5#{hashed_password}';" | psql
+    #   EOH
+    #   not_if "echo '\connect' | PGPASSWORD=#{app_password} psql --username=#{app_name}_user --no-password -h localhost"
+    #   action :run
+    # end
 
     bash "create-application-db" do
       user 'postgres'
       code <<-EOH
-    echo "CREATE DATABASE #{app_name};" | psql
+    echo "CREATE DATABASE \"#{app_name}\";" | psql
       EOH
       not_if "psql -tAc \"SELECT 1 from pg_database where datname='#{app_name}';\""
       action :run
@@ -105,7 +111,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     bash "grant-privs-on-application-db" do
       user 'postgres'
       code <<-EOH
-    echo "GRANT ALL PRIVILEGES ON DATABASE #{app_name} to #{app_name}_user;" | psql
+    echo "GRANT ALL PRIVILEGES ON DATABASE \"#{app_name}\" to \"#{app_name}_user\";" | psql
       EOH
       action :run
     end
