@@ -47,6 +47,11 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     nginx_site "rails-#{app_name}.conf" do
       action :enable
     end
+  else
+    enabled_conf = "/etc/nginx/sites-enabled/#{nginx_vhost_name}.conf"
+    execute "rm #{enabled_conf}" do
+      only_if { File.exist?(enabled_conf) }
+    end
   end
 
   logrotate_app "#{app_name}-nginx" do
