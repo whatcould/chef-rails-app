@@ -1,0 +1,13 @@
+check process sidekiq_<%= @app_name %>
+  matching "sidekiq [-0-9.]+ <%= @app_name %>"
+  every 2 cycles
+
+  start program = "/bin/systemctl start sidekiq_<%= @app_name %>"
+  stop program = "/bin/systemctl stop sidekiq_<%= @app_name %>"
+
+  if totalmem is greater than 400 MB for 2 cycles then restart # eating up memory?
+#  alert <%= @alert_email %> on {timeout}
+
+# https://www.coffeepowered.net/2011/08/19/restarting-resque-workers-or-anything-really-with-monit-passengers-style/
+check file sidekiq-restart-<%= @app_name %> with path /srv/<%= @app_name %>/current/tmp/sidekiq-restart.txt
+  if changed timestamp then exec "/bin/systemctl restart sidekiq_<%= @app_name %>"

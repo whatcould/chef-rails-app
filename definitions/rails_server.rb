@@ -2,7 +2,8 @@ require 'digest'
 
 define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil, enable_nginx: true,
       database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
-      certbot_dir: nil, pre_start: nil, vhost_template: 'nginx-rails.conf.erb', vhost_name: nil, template_cookbook: 'rails_app', passenger_ruby: nil do
+      certbot_dir: nil, pre_start: nil, vhost_template: 'nginx-rails.conf.erb', vhost_name: nil,
+      template_cookbook: 'rails_app', passenger_ruby: nil, setup_sidekiq: false do
 
   package "nodejs" # for Rails asset pipeline
 
@@ -213,5 +214,40 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     mode "0644"
   end
 
+
+  if params[:setup_sidekiq]
+    directory = "/srv/#{app_name}/current"
+
+    template "/etc/systemd/sidekiq_#{app_name}.conf" do
+      source "sidekiq-systemd.conf.erb"
+      cookbook 'rails_app' # somehow chef is confused when other cookbook is specified above
+      variables(
+              app_name: app_name,
+              user_name: user_name,
+              directory: directory,
+              log_directory: "/srv/#{app_name}/shared/log/sidekiq.log"
+      )
+    end
+
+    # monit calls out to systemd to do the start/stop
+    monit_monitrc "sidekiq_#{app_name}" do
+      variables(
+              app_name: app_name,
+              directory: directory,
+              pid_file: "/srv/#{app_name}/shared/tmp/pids/sidekiq.pid"
+      )
+      template_source 'monit-sidekiq.erb'
+      template_cookbook 'rails_app' # somehow chef is confused when other cookbook is specified above
+
+    end
+
+    # allow deploy user to restart sidekiq
+    sudo "#{user_name}_sidekiq_#{app_name}" do
+      users      [user_name]   # or a username
+      runas     'root'
+      nopasswd  true
+      commands  ["/bin/systemctl start sidekiq_#{app_name}", "/bin/systemctl stop sidekiq_#{app_name}", "/bin/systemctl restart sidekiq_#{app_name}"]
+    end
+  end
 
 end
