@@ -218,15 +218,32 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   if params[:setup_sidekiq]
     directory = "/srv/#{app_name}/current"
 
-    template "/etc/systemd/sidekiq_#{app_name}.conf" do
+    service_name = "sidekiq@#{app_name}"
+    reload_name = "#{service_name} systemd reload"
+
+    execute reload_name do
+      command 'systemctl daemon-reload'
+      action :nothing
+    end
+
+    template "/lib/systemd/system/#{service_name}.service" do
       source "sidekiq-systemd.conf.erb"
-      cookbook 'rails_app' # somehow chef is confused when other cookbook is specified above
+      cookbook 'rails_app'
+      owner 'root'
+      group 'root'
+      mode '0644'
       variables(
               app_name: app_name,
               user_name: user_name,
+              group: 'sudo',
               directory: directory,
               log_directory: "/srv/#{app_name}/shared/log/sidekiq.log"
       )
+      notifies :run, "execute[#{reload_name}]", :immediately
+    end
+
+    execute "enable service #{service_name}" do
+      command "systemctl enable #{service_name}.service"
     end
 
     # monit calls out to systemd to do the start/stop
