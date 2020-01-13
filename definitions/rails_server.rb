@@ -263,7 +263,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       users      [user_name]   # or a username
       runas     'root'
       nopasswd  true
-      commands  ["/bin/systemctl start sidekiq_#{app_name}", "/bin/systemctl stop sidekiq_#{app_name}", "/bin/systemctl restart sidekiq_#{app_name}"]
+      commands  ["/bin/systemctl start sidekiq@#{app_name}", "/bin/systemctl stop sidekiq@#{app_name}", "/bin/systemctl restart sidekiq@#{app_name}"]
     end
   end
 
