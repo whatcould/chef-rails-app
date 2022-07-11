@@ -92,14 +92,15 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
         app_name: app_name
       )
     end
-  end
 
-  if params[:enable_nginx]
-    bash "enable #{app_name} puma" do
-      user 'root'
-      code "systemctl enable puma-#{app_name}"
-      action :run
+    if params[:enable_nginx]
+      bash "enable #{app_name} puma" do
+        user 'root'
+        code "systemctl enable puma-#{app_name}"
+        action :run
+      end
     end
+
   end
 
   app_password = params[:db_user_password]
