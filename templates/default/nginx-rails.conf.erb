@@ -31,12 +31,12 @@ server {
     listen 80;
   <% end %>
 
+  root        /srv/<%= @app_name %>/current/public/;
+  access_log  /srv/<%= @app_name %>/shared/log/nginx/access.log;
+  error_log  /srv/<%= @app_name %>/shared/log/nginx/error.log notice;
+
   <% if ! @use_puma %>
     passenger_enabled on;
-
-    root        /srv/<%= @app_name %>/current/public/;
-    access_log  /srv/<%= @app_name %>/shared/log/nginx/access.log;
-    error_log  /srv/<%= @app_name %>/shared/log/nginx/error.log notice;
     rack_env <%= @rails_env %>;
   <% end %>
 
