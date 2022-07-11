@@ -3,6 +3,7 @@ require 'digest'
 define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil,
       database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
       enable_nginx: true, certbot_dir: nil, pre_start: nil, vhost_template: nil,
+      template_cookbook: 'rails_app',
       vhost_name: nil, use_puma: true, passenger_ruby: nil, setup_sidekiq: false, db_pool: nil  do
 
   package "nodejs" # for Rails asset pipeline
@@ -30,9 +31,10 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
   nginx_vhost_name = params[:vhost_name] || "rails-#{app_name}"
   nginx_vhost_template = params[:vhost_template] || "nginx-rails.conf.erb"
+  template_cookbook = params[:template_cookbook]
   template "/etc/nginx/sites-available/#{nginx_vhost_name}.conf"  do
     source nginx_vhost_template
-    cookbook 'rails_app'
+    cookbook template_cookbook
     variables(server_names: params[:server_names],
               app_name: app_name,
               rails_env: env_name,
