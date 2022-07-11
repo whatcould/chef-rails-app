@@ -1,9 +1,9 @@
 require 'digest'
 
-define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil, enable_nginx: true,
+define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil,
       database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
-      certbot_dir: nil, pre_start: nil, vhost_template: 'nginx-rails.conf.erb', vhost_name: nil,
-      template_cookbook: 'rails_app', passenger_ruby: nil, setup_sidekiq: false do
+      enable_nginx: true, certbot_dir: nil, pre_start: nil, vhost_template: nil,
+      vhost_name: nil, use_puma: true, passenger_ruby: nil, setup_sidekiq: false, db_pool: nil  do
 
   package "nodejs" # for Rails asset pipeline
 
@@ -18,6 +18,10 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   directory "/srv/#{app_name}/releases"    do owner user_name end
   directory "/srv/#{app_name}/shared"      do owner user_name end
   directory "/srv/#{app_name}/shared/log"  do owner user_name end
+  directory "/srv/#{app_name}/shared/tmp"  do owner user_name end
+  directory "/srv/#{app_name}/shared/tmp/sockets"  do owner user_name end
+  directory "/srv/#{app_name}/shared/tmp/pids"  do owner user_name end
+  directory "/srv/#{app_name}/shared/sockets"  do owner user_name end
 
   directory "/srv/#{app_name}/shared/log/nginx" do
     owner user_name
@@ -25,16 +29,15 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   end
 
   nginx_vhost_name = params[:vhost_name] || "rails-#{app_name}"
-  nginx_vhost_template = params[:vhost_template]
-  nginx_template_cookbook = params[:template_cookbook]
-
+  nginx_vhost_template = params[:vhost_template] || "nginx-rails.conf.erb"
   template "/etc/nginx/sites-available/#{nginx_vhost_name}.conf"  do
     source nginx_vhost_template
-    cookbook nginx_template_cookbook
+    cookbook 'rails_app'
     variables(server_names: params[:server_names],
               app_name: app_name,
               rails_env: env_name,
               pre_start: params[:pre_start],
+              use_puma: params[:use_puma],
               certbot_dir: params[:certbot_dir],
               passenger_ruby: params[:passenger_ruby]
               )
@@ -75,6 +78,20 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     options   ['missingok', 'delaycompress', 'notifempty']
     postrotate "touch /srv/#{app_name}/current/tmp/restart.txt"
   end
+
+  if params[:use_puma]
+    template "/etc/systemd/system/puma-#{app_name}.service" do
+      source 'puma-systemd.conf.erb'
+      owner user_name
+      cookbook 'rails_app'
+      # group user_name
+      mode '0644'
+      variables(
+        app_name: app_name
+      )
+    end
+  end
+
 
   app_password = params[:db_user_password]
 

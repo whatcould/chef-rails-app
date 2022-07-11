@@ -6,6 +6,12 @@
   }
 <% end %>
 
+<% if @use_puma %>
+upstream <%= @app_name %> {
+    server unix:/srv/<%= @app_name %>/shared/tmp/sockets/puma.sock fail_timeout=0;
+}
+<% end %>
+
 server {
   server_name <%= @server_names %>;
 
@@ -25,17 +31,18 @@ server {
     listen 80;
   <% end %>
 
+  <% if ! @use_puma %>
+    passenger_enabled on;
 
-  passenger_enabled on;
-
-  root        /srv/<%= @app_name %>/current/public/;
-  access_log  /srv/<%= @app_name %>/shared/log/nginx/access.log;
-  error_log  /srv/<%= @app_name %>/shared/log/nginx/error.log notice;
+    root        /srv/<%= @app_name %>/current/public/;
+    access_log  /srv/<%= @app_name %>/shared/log/nginx/access.log;
+    error_log  /srv/<%= @app_name %>/shared/log/nginx/error.log notice;
+    rack_env <%= @rails_env %>;
+  <% end %>
 
   <% if @passenger_ruby %>
-  passenger_ruby <%= @passenger_ruby %>;
+    passenger_ruby <%= @passenger_ruby %>;
   <% end %>
-  rack_env <%= @rails_env %>;
 
   location ~ ^/assets/ {
     expires 1y;
@@ -59,6 +66,6 @@ server {
   #
 
 }
-<% if @pre_start %>
+<% if !@use_puma && @pre_start %>
   passenger_pre_start <%= @pre_start%>;
 <% end %>
