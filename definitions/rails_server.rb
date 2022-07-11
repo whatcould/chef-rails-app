@@ -148,9 +148,9 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       end
     end
   else
-    mysql2_chef_gem 'default' do
-      action :install
-    end
+    # mysql2_chef_gem 'default' do
+    #   action :install
+    # end
 
     # if socket is not specified, tries to connect to default socket
     connection_info = {host: "localhost", username: 'root', password: params[:mysql_root_password], socket: "/var/run/mysql-#{params[:mysql_instance_name]}/mysqld.sock"}

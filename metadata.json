@@ -4,7 +4,6 @@
     "dependencies": {
         "logrotate": ">= 0.0.0",
         "nginx": ">= 0.0.0",
-        "mysql2_chef_gem": ">= 0.0.0",
         "database": ">= 0.0.0",
         "ruby_rbenv": ">= 0.0.0",
         "sudo": ">= 0.0.0"
