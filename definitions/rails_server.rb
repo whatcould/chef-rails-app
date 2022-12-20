@@ -93,6 +93,13 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       )
     end
 
+    sudo "#{user_name}_puma_restart_#{app_name}" do
+      users      [user_name]   # or a username
+      runas     'root'
+      nopasswd  true
+      commands  ["/bin/systemctl start puma-#{app_name}_staging", "/bin/systemctl stop puma-#{app_name}_staging", "/bin/systemctl restart puma-#{app_name}_staging"]
+    end
+
     if params[:enable_nginx]
       bash "enable #{app_name} puma" do
         user 'root'
