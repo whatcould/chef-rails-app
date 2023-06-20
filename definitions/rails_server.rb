@@ -1,7 +1,7 @@
 require 'digest'
 
 define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version: nil,
-      database: 'postgres', db_user_password: nil, mysql_instance_name: nil, server_names: nil,
+      database: 'postgres', db_user_password: nil, db_user_name: nil, mysql_instance_name: nil, server_names: nil,
       enable_nginx: true, certbot_dir: nil, pre_start: nil, vhost_template: nil,
       template_cookbook: 'rails_app',
       vhost_name: nil, use_puma: true, passenger_ruby: nil, setup_sidekiq: false, db_pool: nil  do
@@ -111,10 +111,10 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   end
 
   app_password = params[:db_user_password]
+  db_user_name = params[:db_user_name] || "#{app_name}_user"
 
   if params[:database] == 'postgres'
-
-    postgresql_user "#{app_name}_user" do
+    postgresql_user db_user_name do
       password app_password
     end
 
@@ -151,7 +151,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     bash "grant-privs-on-application-db" do
       user 'postgres'
       code <<-EOH
-    echo "GRANT ALL PRIVILEGES ON DATABASE \"#{app_name}\" to \"#{app_name}_user\";" | psql
+    echo "GRANT ALL PRIVILEGES ON DATABASE \"#{app_name}\" to \"#{db_user_name}\";" | psql
       EOH
       action :run
     end
