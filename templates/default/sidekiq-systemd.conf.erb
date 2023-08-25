@@ -29,15 +29,20 @@ WorkingDirectory=<%= @directory %>
 # ExecStart=/bin/bash -lc '/usr/local/rbenv/shims/bundle exec sidekiq -e production'
 # If you use the system's ruby:
 #ExecStart=/usr/local/bin/bundle exec sidekiq -e production
-ExecStart=/bin/bash -lc 'exec /home/deploy/.rbenv/shims/bundle exec sidekiq -e production'
+ExecStart=/usr/local/rbenv/bin/rbenv exec bundle exec sidekiq -e production
 User=<%= @user_name %>
 Group=<%= @group %>
 UMask=0002
+
+Environment=RAILS_ENV=production
+Environment=RBENV_ROOT=/usr/local/rbenv
+EnvironmentFile=/srv/<%= @app_name %>/shared/.env
 
 # Greatly reduce Ruby memory fragmentation and heap usage
 # https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
 Environment=MALLOC_ARENA_MAX=2
 Environment=LOG_LEVEL=warn
+
 
 # if we crash, restart
 RestartSec=1
