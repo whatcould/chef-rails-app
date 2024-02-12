@@ -11,7 +11,8 @@ Environment=RBENV_ROOT=/usr/local/rbenv
 EnvironmentFile=/srv/<%= @app_name %>/shared/.env
 ExecStart=/usr/local/rbenv/bin/rbenv exec bundle exec puma -S /srv/<%= @app_name %>/shared/tmp/pids/puma.state -C /srv/<%= @app_name %>/current/config/puma.rb -b unix:///srv/<%= @app_name %>/shared/tmp/sockets/puma.sock
 ExecStop=/usr/local/rbenv/bin/rbenv exec bundle exec pumactl -S /srv/<%= @app_name %>/shared/tmp/pids/server.state stop
-ExecReload=/usr/local/rbenv/bin/rbenv exec bundle exec pumactl  -S /srv/<%= @app_name %>/shared/tmp/pids/puma.state restart
+ExecReload=/usr/local/rbenv/bin/rbenv exec bundle exec pumactl  -S /srv/<%= @app_name %>/shared/tmp/pids/puma.state phased-restart
+
 TimeoutSec=15
 Restart=always
 
