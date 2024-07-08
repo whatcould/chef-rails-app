@@ -76,7 +76,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
     path [ "/srv/#{app_name}/shared/log/*.log" ]
     frequency "daily"
     create "660 deploy www-data"
-    rotate 7
+    rotate 30
     options   ['missingok', 'delaycompress', 'notifempty']
     postrotate "touch /srv/#{app_name}/current/tmp/restart.txt"
   end
