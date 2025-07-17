@@ -46,7 +46,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
     mode 0755
     action :create
-    notifies :restart, "service[nginx]"
+    # notifies :reload, "service[nginx]"
   end
 
   if params[:enable_nginx]
