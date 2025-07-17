@@ -114,7 +114,9 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
 
   if params[:database] == 'postgres'
     postgresql_user db_user_name do
-      password app_password
+      action :update
+      unencrypted_password app_password
+      login true
     end
 
         #
