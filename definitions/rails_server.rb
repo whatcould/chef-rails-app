@@ -157,6 +157,14 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       action :run
     end
 
+    bash "grant-owner-on-application-db" do
+      user 'postgres'
+      code <<-EOH
+    echo "ALTER DATABASE \"#{app_name}\" OWNER TO \"#{db_user_name}\";" | psql
+      EOH
+      action :run
+    end
+
     package 'libpq-dev' # for DBD:Pg cpan
     cpan_module "DBD::Pg"
     # Monitor database with munin
