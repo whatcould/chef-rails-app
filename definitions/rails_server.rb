@@ -32,7 +32,7 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   nginx_vhost_name = params[:vhost_name] || "rails-#{app_name}"
   nginx_vhost_template = params[:vhost_template] || "nginx-rails.conf.erb"
   template_cookbook = params[:template_cookbook]
-  template "/etc/nginx/sites-available/#{nginx_vhost_name}.conf"  do
+  template "/etc/nginx/conf.http.d/#{nginx_vhost_name}.conf"  do
     source nginx_vhost_template
     cookbook template_cookbook
     variables(server_names: params[:server_names],
@@ -54,9 +54,8 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
       action :enable
     end
   else
-    enabled_conf = "/etc/nginx/sites-enabled/#{nginx_vhost_name}.conf"
-    execute "rm #{enabled_conf}" do
-      only_if { File.exist?(enabled_conf) }
+    nginx_site "rails-#{app_name}.conf" do
+      action :disable
     end
   end
 
