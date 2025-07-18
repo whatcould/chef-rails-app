@@ -50,11 +50,11 @@ define :rails_server, env_name: 'production', user_name: 'deploy', ruby_version:
   end
 
   if params[:enable_nginx]
-    nginx_site "rails-#{app_name}.conf" do
+    nginx_site "rails-#{app_name}" do
       action :enable
     end
   else
-    nginx_site "rails-#{app_name}.conf" do
+    nginx_site "rails-#{app_name}" do
       action :disable
     end
   end
